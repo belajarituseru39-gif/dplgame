@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DPL Game - Dimensi Profil Lulusan</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f9ff;
+            /* Background Image Setup */
+            background-image: url('https://i.imgur.com/J6v0Zlq.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            
+            overflow: hidden;
+            touch-action: none; 
+            user-select: none;
+        }
+        
+        .bg-overlay {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+        }
+
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .card-pop {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .card-pop:active {
+            transform: scale(0.95);
+        }
+        @keyframes bounce-in {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-bounce-in {
+            animation: bounce-in 0.5s ease-out forwards;
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        /* Utility untuk konten scrollable */
+        .scroll-container {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- DATA MATERI ---
+        const MATERIAL_DATA = [
+            {
+                title: "1. Keimanan dan Ketakwaan",
+                desc: "Kemampuan murid untuk meyakini dan mengamalkan ajaran agama atau kepercayaannya dalam kehidupan sehari-hari.",
+                detail: "Menekankan pembentukan akhlak mulia (jujur, kasih sayang, tanggung jawab) serta menjaga hubungan harmonis dengan Tuhan, sesama, dan lingkungan."
+            },
+            {
+                title: "2. Kewargaan",
+                desc: "Kesadaran murid sebagai bagian dari warga bangsa dan warga dunia.",
+                detail: "Bangga terhadap identitas Indonesia, menghargai keberagaman, menaati aturan, menolak diskriminasi, serta menjaga persatuan dan kedamaian."
+            },
+            {
+                title: "3. Penalaran Kritis",
+                desc: "Kemampuan berpikir logis, analitis, dan reflektif dalam memahami serta menyelesaikan masalah.",
+                detail: "Mampu bertanya, menganalisis informasi, memilah fakta, menyusun argumen logis, dan mengambil keputusan yang tepat."
+            },
+            {
+                title: "4. Kreativitas",
+                desc: "Kemampuan mencipta gagasan, karya, atau solusi baru yang bermanfaat.",
+                detail: "Menumbuhkan perilaku produktif, imajinatif, dan inovatif sebagai respons atas tantangan dan permasalahan di lingkungan sekitar."
+            },
+            {
+                title: "5. Kolaborasi",
+                desc: "Kemampuan bekerja sama secara efektif dengan orang lain.",
+                detail: "Dibiasakan untuk peduli, berbagi, saling menghargai, dan berkontribusi dalam kelompok yang beragam."
+            },
+            {
+                title: "6. Kemandirian",
+                desc: "Kemampuan mengatur diri dan bertanggung jawab atas proses belajar dan pengembangan diri.",
+                detail: "Menunjukkan inisiatif, disiplin, daya juang, kemampuan beradaptasi, serta kebiasaan refleksi diri."
+            },
+            {
+                title: "7. Kesehatan",
+                desc: "Kesadaran dan kemampuan menjaga kesehatan fisik dan mental secara berkelanjutan.",
+                detail: "Menekankan pola hidup bersih dan sehat, kebugaran jasmani, kesehatan mental, serta kepedulian terhadap lingkungan."
+            },
+            {
+                title: "8. Komunikasi",
+                desc: "Kemampuan menyampaikan dan memahami gagasan secara efektif dan beretika.",
+                detail: "Mampu menyimak, berbicara, membaca, dan menulis dengan baik dan benar dalam berbagai konteks verbal maupun nonverbal."
+            }
+        ];
+
+        // --- DATA KARTU ---
+        const DIMENSIONS = {
+            KEIMANAN: { 
+                id: 'KEIMANAN', color: 'bg-yellow-300', border: 'border-yellow-600', text: 'text-yellow-900', label: 'Keimanan & Ketakwaan', image: 'https://i.imgur.com/6UtIn8Q.png',
+                definition: "Individu yang memiliki keyakinan teguh akan keberadaan Tuhan YME, serta menghayati dan mengamalkan nilai spiritual.",
+                examples: ["Melaksanakan ibadah dengan konsisten", "Menjaga dan merawat Lingkungan", "Bersikap jujur dalam setiap tindakan", "Berbuat baik kepada sesama"]
+            },
+            KEWARGAAN: { 
+                id: 'KEWARGAAN', color: 'bg-red-500', border: 'border-red-700', text: 'text-white', label: 'Kewargaan', image: 'https://i.imgur.com/QuRHehy.png',
+                definition: "Individu yang memiliki rasa cinta tanah air, menghargai keberagaman, serta taat pada aturan dan norma sosial.",
+                examples: ["Aktif dalam Kegiatan Sosial", "Taat terhadap Aturan dan Norma Sosial", "Menggunakan Produk Lokal", "Menghormati Keberagaman"]
+            },
+            KRITIS: { 
+                id: 'KRITIS', color: 'bg-orange-400', border: 'border-orange-700', text: 'text-white', label: 'Penalaran Kritis', image: 'https://i.imgur.com/zboD86e.png',
+                definition: "Individu yang mampu berpikir secara logis, analitis, dan reflektif dalam memproses informasi untuk menyelesaikan masalah.",
+                examples: ["Mengumpulkan Informasi Secara Objektif", "Menggunakan Logika dalam Mengambil Keputusan", "Berani Mengajukan Pertanyaan Kritis", "Memecahkan Masalah Secara Sistematis"]
+            },
+            KREATIVITAS: { 
+                id: 'KREATIVITAS', color: 'bg-purple-500', border: 'border-purple-700', text: 'text-white', label: 'Kreativitas', image: 'https://i.imgur.com/MuPXu9q.png',
+                definition: "Individu yang mampu berpikir inovatif, fleksibel, dan orisinal dalam menciptakan solusi yang unik dan bermanfaat.",
+                examples: ["Berani Mencoba Hal Baru", "Mengembangkan Ide Secara Orisinal", "Mengasah Rasa Ingin Tahu", "Menggunakan Teknologi secara Kreatif"]
+            },
+            KOLABORASI: { 
+                id: 'KOLABORASI', color: 'bg-teal-400', border: 'border-teal-700', text: 'text-white', label: 'Kolaborasi', image: 'https://i.imgur.com/RqjUY6W.png',
+                definition: "Individu yang mampu bekerja sama secara efektif, saling menghargai, dan berkontribusi untuk tujuan bersama.",
+                examples: ["Berbagi Tugas Secara Adil", "Mendukung dan Membantu Rekan Tim", "Mengutamakan Kepentingan Bersama", "Menjunjung Sikap Saling Percaya"]
+            },
+            KEMANDIRIAN: { 
+                id: 'KEMANDIRIAN', color: 'bg-white', border: 'border-slate-400', text: 'text-slate-900', label: 'Kemandirian', image: 'https://i.imgur.com/DcbhdZo.png',
+                definition: "Individu yang sadar akan diri, bertanggung jawab atas proses belajarnya, dan mampu mengelola diri sendiri.",
+                examples: ["Belajar Secara Mandiri", "Mengelola Waktu dengan Baik", "Mengevaluasi Hasil Belajar Sendiri", "Tidak Mudah Menyerah"]
+            },
+            KESEHATAN: { 
+                id: 'KESEHATAN', color: 'bg-blue-600', border: 'border-blue-900', text: 'text-white', label: 'Kesehatan', image: 'https://i.imgur.com/tlaf5G4.png',
+                definition: "Individu yang menjaga kesehatan fisik dan mental serta keseimbangan diri untuk kesejahteraan hidup.",
+                examples: ["Rajin Berolahraga", "Menjaga Hubungan Sosial yang Positif", "Mengelola Stres dengan Baik", "Membiasakan Diri untuk Aktif Bergerak"]
+            },
+            KOMUNIKASI: { 
+                id: 'KOMUNIKASI', color: 'bg-pink-400', border: 'border-pink-700', text: 'text-white', label: 'Komunikasi', image: 'https://i.imgur.com/ZCXIAor.png',
+                definition: "Individu yang mampu menyampaikan dan menerima informasi dengan jelas, santun, dan efektif.",
+                examples: ["Melakukan Evaluasi Diri", "Berpikir Sebelum Bertindak", "Menyampaikan Ide dengan Jelas", "Menyesuaikan Gaya Komunikasi dengan Situasi"]
+            },
+        };
+
+        const CARD_TYPES = { TITLE: 'JUDUL', DEFINITION: 'DEFINISI', EXAMPLE: 'SIKAP' };
+
+        // --- SOUND EFFECTS (Web Audio API) ---
+        const playSFX = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                const now = ctx.currentTime;
+                if (type === 'correct') {
+                    // Nada naik (sukses)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'wrong') {
+                    // Nada rendah berdengung (salah)
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(250, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch (e) { console.error("Audio error:", e); }
+        };
+
+        // --- ICONS ---
+        const Icons = {
+            Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Book: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            User: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            Play: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            Maximize: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>,
+            Minimize: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>,
+            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            Clock: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            ArrowRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+            MusicOn: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+            MusicOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v9a3 3 0 0 1-5.1 1.5"/><path d="M12 6l9-2v9.3a3 3 0 0 1-2.1.7"/></svg>,
+            Home: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        };
+
+        const MusicPlayer = () => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const audioRef = useRef(new Audio('https://github.com/belajarituseru39-gif/dplgame1/raw/refs/heads/main/Dimensi%20Profil%20Lulusan.mp3'));
+
+            useEffect(() => {
+                const audio = audioRef.current;
+                audio.loop = true;
+                return () => { audio.pause(); };
+            }, []);
+
+            const toggleMusic = () => {
+                const audio = audioRef.current;
+                if (isPlaying) audio.pause();
+                else audio.play().catch(e => console.log("Audio play failed:", e));
+                setIsPlaying(!isPlaying);
+            };
+
+            return (
+                <button onClick={toggleMusic} className="fixed top-2 left-16 md:top-4 md:left-20 z-[100] bg-indigo-600/80 hover:bg-indigo-700 text-white p-2 md:p-3 rounded-full backdrop-blur transition-all shadow-lg border border-white/20" title={isPlaying ? "Matikan Musik" : "Putar Musik"}>
+                    {isPlaying ? <Icons.MusicOn /> : <Icons.MusicOff />}
+                </button>
+            );
+        };
+
+        const FullScreenToggle = () => {
+            const [isFullscreen, setIsFullscreen] = useState(false);
+            useEffect(() => {
+                const handleChange = () => setIsFullscreen(!!document.fullscreenElement);
+                document.addEventListener('fullscreenchange', handleChange);
+                return () => document.removeEventListener('fullscreenchange', handleChange);
+            }, []);
+            const toggle = () => !document.fullscreenElement ? document.documentElement.requestFullscreen().catch(console.log) : document.exitFullscreen();
+            return (
+                <button onClick={toggle} className="fixed top-2 right-2 md:top-4 md:right-4 z-[100] bg-black/30 hover:bg-black/50 text-white p-2 rounded-full backdrop-blur transition-all shadow-lg border border-white/20" title="Toggle Fullscreen">
+                    {isFullscreen ? <Icons.Minimize /> : <Icons.Maximize />}
+                </button>
+            );
+        };
+
+        const HomeButton = ({ onClick }) => (
+            <button 
+                onClick={onClick} 
+                className="fixed top-2 left-2 md:top-4 md:left-4 z-[100] bg-indigo-600/80 hover:bg-indigo-700 text-white p-2 md:p-3 rounded-full backdrop-blur transition-all shadow-lg border border-white/20"
+                title="Kembali ke Menu Utama"
+            >
+                <Icons.Home />
+            </button>
+        );
+        
+        // --- ADAPTIVE CARD COMPONENT ---
+        const Card = ({ data, onClick, isPlayable, size = 'md', fullText = false }) => {
+            if (!data) return null;
+            const dimStyle = DIMENSIONS[data.dimension];
+            
+            // Adjusted size classes to be smaller and fit better
+            const sizeClass = size === 'lg' 
+                ? 'h-40 w-28 sm:h-56 sm:w-40 md:h-72 md:w-52 lg:h-80 lg:w-60' 
+                : (size === 'sm' 
+                    ? 'h-16 w-12 sm:h-20 sm:w-14 md:h-24 md:w-16' 
+                    : (size === 'auto'
+                        ? 'h-full min-h-[6rem] w-full'
+                        : 'h-16 w-12 sm:h-20 sm:w-14 md:h-24 md:w-16 lg:h-28 lg:w-20 xl:h-32 xl:w-24')); 
+            
+            const fontSize = size === 'lg' 
+                ? 'text-xs sm:text-sm md:text-base lg:text-lg' 
+                : (size === 'auto'
+                    ? 'text-[8px] sm:text-[10px] md:text-xs leading-tight'
+                    : 'text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] leading-tight');
+            
+            const paddingClass = (data.type === CARD_TYPES.TITLE && data.image) ? 'p-0.5' : 'p-1';
+
+            return (
+                <div onClick={() => isPlayable && onClick(data)} className={`relative ${sizeClass} rounded shadow-sm md:shadow-md flex flex-col ${paddingClass} ${dimStyle.color} ${dimStyle.border} border-b-2 md:border-b-4 ${isPlayable ? 'cursor-pointer hover:-translate-y-1 card-pop ring-2 ring-white/50' : ''} transition-all duration-200 select-none overflow-hidden`}>
+                    <div className={`flex justify-between items-start border-black/10 shrink-0 z-10 relative ${data.type === CARD_TYPES.TITLE && data.image ? 'mb-0 pb-0 border-none' : 'mb-0.5 border-b pb-0.5'}`}>
+                        <div className={`font-bold uppercase ${dimStyle.text} opacity-80 ${data.type === CARD_TYPES.TITLE ? 'text-[4px] sm:text-[5px] md:text-[6px]' : 'text-[5px] sm:text-[6px] md:text-[7px]'}`}>{data.type}</div>
+                        {data.type === CARD_TYPES.TITLE && <div className={`${data.dimension === 'KEMANDIRIAN' ? 'text-yellow-600' : 'text-yellow-300'} text-[6px] sm:text-[8px] leading-none`}>★</div>}
+                    </div>
+                    <div className={`flex-1 flex flex-col justify-center items-center text-center w-full ${fullText || size === 'auto' ? 'h-auto' : 'h-full overflow-hidden'} relative`}>
+                        {data.type === CARD_TYPES.TITLE && data.image ? (
+                            <img src={data.image} alt={data.content} className="w-full h-full object-contain" />
+                        ) : (
+                            <>
+                                <h4 className={`font-display font-bold ${fontSize} ${dimStyle.text} z-10 relative ${fullText || size === 'auto' ? '' : 'line-clamp-4'}`}>{data.content}</h4>
+                                <div className={`mt-0.5 h-0.5 w-4 bg-black/10 rounded mx-auto z-10 relative`}></div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const BoardSlot = ({ index, card, onDrop, isActive }) => {
+            let label = "", icon = "";
+            if (index === 0) { label = "JUDUL"; icon = "★"; }
+            else { label = "SIKAP"; icon = "👍"; }
+
+            return (
+                <div onClick={() => isActive && !card && onDrop(index)} className={`relative flex flex-col items-center justify-center ${card ? '' : 'border border-dashed border-gray-400 bg-white/40 hover:bg-white/60'} rounded-lg transition-all duration-300 ${isActive && !card ? 'animate-pulse bg-yellow-100 border-yellow-500 scale-105 shadow-glow cursor-pointer z-10' : ''} h-16 w-12 sm:h-20 sm:w-14 md:h-24 md:w-16 lg:h-28 lg:w-20 xl:h-32 xl:w-24 m-0.5`}>
+                    {card ? <Card data={card} size="md" isPlayable={false} /> : 
+                        <div className="text-center opacity-50 pointer-events-none select-none text-slate-600">
+                            <div className="text-xs sm:text-sm md:text-base mb-0.5">{icon}</div>
+                            <span className="text-[5px] sm:text-[6px] md:text-[8px] font-bold">{label}</span>
+                        </div>
+                    }
+                </div>
+            );
+        };
+
+        const IntroScreen = ({ onNext, onMaterial }) => (
+            <div className="min-h-screen w-full flex flex-col items-center justify-center bg-overlay text-indigo-900 p-2 md:p-4 text-center relative overflow-hidden scroll-container">
+                <div className="absolute top-10 left-10 w-16 h-16 md:w-24 md:h-24 bg-yellow-400/20 rounded-full blur-2xl animate-float"></div>
+                <div className="absolute bottom-10 right-10 w-24 h-24 md:w-32 md:h-32 bg-pink-500/20 rounded-full blur-2xl animate-float" style={{animationDelay: '1s'}}></div>
+                
+                <div className="relative z-10 max-w-3xl animate-bounce-in my-auto py-2 flex flex-col items-center">
+                    
+                    {/* Menambahkan Logo Game di sini - Ukuran Diperkecil */}
+                    <img src="https://i.imgur.com/bhN4HSf.png" alt="Logo Game DPL" className="w-32 md:w-40 lg:w-48 h-auto object-contain mb-1 md:mb-2 drop-shadow-lg" />
+
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 drop-shadow-sm">DPL GAME</h1>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 md:mb-4 text-indigo-800">Misi Profil Lulusan</h2>
+                    
+                    <div className="bg-white/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-white/40 shadow-xl mb-4 w-full">
+                        <p className="text-sm md:text-base lg:text-lg leading-snug mb-3 font-medium text-slate-700">
+                            "Selamat datang, para calon pemimpin masa depan! <br/>
+                            Misi Anda hari ini adalah menyusun mozaik kepribadian yang utuh. 
+                            Kumpulkan kepingan <strong>8 Dimensi Profil Lulusan</strong> untuk menjadi <strong>Pelajar yang bermutu untuk Indonesia</strong>. 
+                            Siapkah tim Anda menghadapi tantangan ini?"
+                        </p>
+                        
+                        {/* Keterangan Ide Permainan yang disederhanakan menjadi 1 baris */}
+                        <div className="mt-3 pt-3 border-t border-indigo-200/50">
+                            <p className="text-[10px] sm:text-[11px] md:text-xs text-slate-700 font-medium">
+                                <strong>Ide Permainan:</strong> Abdul Rahmat, S.Pd (SDN 011 Balikpapan Tengah) &bull; <strong>Kontak:</strong> 081351767574
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row justify-center gap-3">
+                        <button onClick={onMaterial} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-5 md:py-2.5 md:px-6 rounded-full text-sm md:text-base shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                            <Icons.Book /> Materi Pembelajaran
+                        </button>
+                        <button onClick={onNext} className="bg-yellow-400 hover:bg-yellow-500 text-indigo-900 font-bold py-2 px-5 md:py-2.5 md:px-6 rounded-full text-sm md:text-base shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                            MULAI MAIN <Icons.ArrowRight />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const MaterialScreen = ({ onBack }) => (
+            <div className="h-screen w-full flex flex-col items-center bg-overlay text-indigo-900 p-4 md:p-8 relative">
+                <div className="bg-white/95 text-slate-800 rounded-3xl p-6 md:p-8 max-w-5xl w-full shadow-2xl animate-bounce-in h-full flex flex-col border border-indigo-100">
+                    <div className="flex justify-between items-center mb-6 border-b pb-4 border-indigo-100">
+                        <h2 className="text-2xl md:text-4xl font-display font-bold text-indigo-700">8 DIMENSI PROFIL LULUSAN</h2>
+                    </div>
+                    
+                    <div className="overflow-y-auto custom-scroll pr-2 flex-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {MATERIAL_DATA.map((item, idx) => (
+                                <div key={idx} className="bg-indigo-50 p-5 rounded-2xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 className="font-bold text-lg md:text-xl text-indigo-800 mb-2">{item.title}</h3>
+                                    <div className="mb-2">
+                                        <span className="font-bold text-xs text-slate-500 uppercase">Pengertian:</span>
+                                        <p className="text-sm md:text-base text-slate-700 leading-snug">{item.desc}</p>
+                                    </div>
+                                    <div>
+                                        <span className="font-bold text-xs text-slate-500 uppercase">Penjelasan:</span>
+                                        <p className="text-sm md:text-base text-slate-600 leading-snug italic">{item.detail}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="mt-6 text-center pt-2 border-t border-indigo-100">
+                        <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-slate-700 font-bold py-3 px-8 rounded-full text-lg shadow-md transition-all">
+                            Kembali ke Menu Utama
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const TutorialScreen = ({ onNext }) => (
+            <div className="h-screen w-full flex flex-col items-center justify-center bg-overlay text-indigo-900 p-4 relative">
+                <div className="bg-white/95 text-slate-800 rounded-3xl p-6 md:p-8 max-w-5xl w-full shadow-2xl animate-bounce-in max-h-[90vh] overflow-y-auto custom-scroll border border-indigo-100">
+                    <h2 className="text-2xl md:text-4xl font-display font-bold text-center mb-4 md:mb-6 text-indigo-700">CARA BERMAIN</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
+                        <div className="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-sm"><h3 className="font-bold text-base md:text-lg text-blue-900">1. MISI UTAMA</h3><p className="text-xs md:text-sm">Kumpulkan 1 Kartu Judul + 4 Kartu Contoh Sikap dengan warna yang sama.</p></div>
+                        <div className="bg-yellow-50 p-4 rounded-xl border-l-4 border-yellow-500 shadow-sm"><h3 className="font-bold text-base md:text-lg text-yellow-900">2. GILIRAN</h3><p className="text-xs md:text-sm">Ambil kartu dari Dek Tertutup atau ambil 1 dari 3 kartu teratas Tumpukan Terbuka. Pasang di papanmu atau Buang kembali.</p></div>
+                        <div className="bg-red-50 p-4 rounded-xl border-l-4 border-red-500 shadow-sm"><h3 className="font-bold text-base md:text-lg text-red-900">3. ATURAN</h3><p className="text-xs md:text-sm">Kamu <strong>WAJIB</strong> punya Kartu Judul dulu sebelum bisa memasang Kartu Sikap. Pastikan semua kartu sewarna.</p></div>
+                        <div className="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-sm"><h3 className="font-bold text-base md:text-lg text-green-900">4. PEMENANG</h3><p className="text-xs md:text-sm">Tim yang berhasil menutup semua 5 slot dengan benar akan menang!</p></div>
+                    </div>
+                    <div className="text-center"><button onClick={onNext} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 md:px-10 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all flex items-center gap-2 mx-auto"><Icons.Check /> AYO MULAI!</button></div>
+                </div>
+            </div>
+        );
+
+        const SetupScreen = ({ onStart }) => {
+            const [step, setStep] = useState(1);
+            const [count, setCount] = useState(2);
+            const [names, setNames] = useState({ 0: "Tim Rukun", 1: "Tim Hebat", 2: "Tim Keren", 3: "Tim Seru" });
+            
+            return (
+                <div className="h-screen w-full flex flex-col items-center justify-center bg-overlay p-4">
+                    <div className="animate-bounce-in flex flex-col items-center w-full max-w-2xl bg-white/80 backdrop-blur-lg p-6 md:p-8 rounded-3xl border border-white/50 shadow-2xl">
+                        <h2 className="text-2xl md:text-4xl font-display font-bold mb-4 md:mb-6 text-center text-indigo-800">PERSIAPAN TIM</h2>
+                        {step === 1 ? (
+                            <div className="grid grid-cols-3 gap-4 w-full">
+                                {[2, 3, 4].map(num => (
+                                    <button key={num} onClick={() => {setCount(num); setStep(2);}} className="bg-white hover:bg-yellow-100 text-indigo-800 text-lg md:text-xl font-bold py-4 md:py-6 rounded-2xl shadow-lg border-b-8 border-indigo-200 hover:border-yellow-400 active:border-b-0 active:translate-y-2 flex flex-col items-center">
+                                        <span className="text-3xl md:text-5xl">{num}</span><span className="text-[10px] md:text-xs">TIM</span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="w-full">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 md:mb-8">
+                                    {Array.from({ length: count }).map((_, idx) => (
+                                        <div key={idx} className="p-2 rounded-xl bg-white/50 border-2 border-indigo-100"><input type="text" value={names[idx]} onChange={(e) => setNames(prev => ({...prev, [idx]: e.target.value}))} className="w-full font-bold px-2 py-1 bg-transparent outline-none text-sm md:text-base" /></div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-4">
+                                    <button onClick={() => setStep(1)} className="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl text-sm md:text-base">Kembali</button>
+                                    <button onClick={() => onStart(count, names)} className="w-2/3 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1 text-sm md:text-base">MULAI MAIN</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const DeckModal = ({ isOpen, onClose, onDrawDeck, onDrawDiscard, deckCount, discardPile, onSelectFromDiscard }) => {
+            if (!isOpen) return null;
+            const topDiscardCards = discardPile.slice(0, 3);
+
+            return (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-bounce-in p-4" onClick={onClose}>
+                    <div className="bg-white p-4 md:p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-6 max-w-2xl w-full border-4 border-white/50 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg md:text-2xl font-bold text-indigo-900 font-display text-center">AMBIL DARI MANA?</h3>
+                        <div className="flex flex-col md:flex-row gap-8 justify-center items-start w-full">
+                            <div className="flex flex-col items-center gap-2 w-full md:w-auto">
+                                <div onClick={onDrawDeck} className="group cursor-pointer flex flex-col items-center gap-2">
+                                    <div className="w-24 h-36 sm:w-32 sm:h-48 bg-gradient-to-br from-indigo-600 to-blue-800 rounded-xl border-4 border-white shadow-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                                        <div className="text-white font-bold text-center">
+                                            <div className="text-2xl sm:text-4xl">🎴</div>
+                                            <div className="text-xs sm:text-sm mt-1">{deckCount} Kartu</div>
+                                        </div>
+                                    </div>
+                                    <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold text-xs shadow-sm">DEK TERTUTUP</span>
+                                </div>
+                            </div>
+                            <div className="hidden md:block w-px h-48 bg-slate-200"></div>
+                            <div className="md:hidden w-full h-px bg-slate-200"></div>
+                            <div className="flex flex-col items-center gap-2 w-full md:w-auto">
+                                <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-full font-bold text-xs shadow-sm mb-2">TUMPUKAN TERBUKA (Pilih 1)</span>
+                                {topDiscardCards.length > 0 ? (
+                                    <div className="flex gap-2 justify-center flex-wrap">
+                                        {topDiscardCards.map((card, idx) => (
+                                            <div key={card.id} onClick={() => onSelectFromDiscard(card)} className="cursor-pointer hover:scale-105 transition-transform hover:z-10" title="Ambil Kartu Ini">
+                                                <div className="relative">
+                                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold z-20 shadow border border-white">{idx + 1}</span>
+                                                    <Card data={card} size="sm" isPlayable={false} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-32 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center bg-slate-50"><span className="text-slate-400 text-xs font-bold">KOSONG</span></div>
+                                )}
+                                {discardPile.length > 3 && <span className="text-[10px] text-slate-400 italic">...dan {discardPile.length - 3} kartu lainnya di bawah</span>}
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="mt-2 text-slate-500 hover:text-slate-800 text-sm font-bold border border-slate-200 px-4 py-2 rounded-lg">BATAL</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN GAME ---
+        const DPLGame = () => {
+            const [gameState, setGameState] = useState('INTRO');
+            const [playerCount, setPlayerCount] = useState(2);
+            const [deck, setDeck] = useState([]);
+            const [discardPile, setDiscardPile] = useState([]);
+            const [players, setPlayers] = useState([]);
+            const [turn, setTurn] = useState(0);
+            const [holdingCard, setHoldingCard] = useState(null);
+            const [phase, setPhase] = useState('DRAW'); 
+            const [message, setMessage] = useState("");
+            const [winner, setWinner] = useState(null);
+            const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
+            const [timeLeft, setTimeLeft] = useState(600); // 10 menit = 600 detik
+
+            useEffect(() => {
+                let timerId;
+                if (gameState === 'PLAY' && timeLeft > 0) {
+                    timerId = setInterval(() => {
+                        setTimeLeft(prev => prev - 1);
+                    }, 1000);
+                } else if (gameState === 'PLAY' && timeLeft <= 0) {
+                    setMessage("⏳ Waktu Habis! Permainan Berakhir Seri.");
+                    setWinner(null);
+                    setGameState('END');
+                }
+                return () => {
+                    if (timerId) clearInterval(timerId);
+                };
+            }, [gameState, timeLeft]);
+
+            const formatTime = (seconds) => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `${m}:${s < 10 ? '0' : ''}${s}`;
+            };
+
+            const generateDeck = (numPlayers) => {
+                let deck = [];
+                let idCounter = 1;
+                // Aturan: 2 Pemain = 4 Set, 3 Pemain = 5 Set, 4 Pemain = 6 Set
+                const numSets = numPlayers + 2; 
+
+                const allKeys = Object.keys(DIMENSIONS);
+                const shuffledKeys = allKeys.sort(() => Math.random() - 0.5);
+                const selectedKeys = shuffledKeys.slice(0, numSets);
+
+                selectedKeys.forEach(key => {
+                    const dim = DIMENSIONS[key];
+                    deck.push({ id: idCounter++, type: CARD_TYPES.TITLE, dimension: key, content: dim.label, image: dim.image, desc: "Kartu Utama" });
+                    dim.examples.forEach((exText) => deck.push({ id: idCounter++, type: CARD_TYPES.EXAMPLE, dimension: key, content: exText, desc: `Contoh Sikap ${dim.label}` }));
+                });
+                return deck.sort(() => Math.random() - 0.5);
+            };
+
+            const PLAYER_THEMES = [
+                { bg: "bg-red-50/95", border: "border-red-400", text: "text-red-900" },
+                { bg: "bg-blue-50/95", border: "border-blue-400", text: "text-blue-900" },
+                { bg: "bg-green-50/95", border: "border-green-400", text: "text-green-900" },
+                { bg: "bg-purple-50/95", border: "border-purple-400", text: "text-purple-900" }
+            ];
+
+            const startGame = (numPlayers, customNames) => {
+                const newDeck = generateDeck(numPlayers);
+                setDeck(newDeck);
+                setDiscardPile([]);
+                const newPlayers = [];
+                for(let i=0; i<numPlayers; i++) {
+                    newPlayers.push({ id: i, name: customNames[i] || `TIM ${i+1}`, ...PLAYER_THEMES[i], board: Array(5).fill(null) });
+                }
+                setPlayers(newPlayers);
+                setPlayerCount(numPlayers);
+                setTurn(0);
+                setPhase('DRAW');
+                setHoldingCard(null);
+                setTimeLeft(600); // Reset timer ke 10 menit
+                setMessage(`Giliran ${customNames[0] || 'Tim 1'}: Sentuh tombol AMBIL KARTU`);
+                setGameState('PLAY');
+                setIsDeckModalOpen(false);
+            };
+
+            const currentPlayer = players[turn];
+
+            const handleDrawClick = () => {
+                if (phase === 'DRAW') setIsDeckModalOpen(true);
+            };
+
+            const drawCard = () => {
+                let currentDeck = [...deck];
+                let currentDiscard = [...discardPile];
+                if (currentDeck.length === 0) {
+                    if (currentDiscard.length === 0) { setMessage("⚠️ Kartu habis! Permainan Seri."); setIsDeckModalOpen(false); return; }
+                    currentDeck = currentDiscard.sort(() => Math.random() - 0.5);
+                    currentDiscard = [];
+                    setMessage("♻️ Mengocok ulang...");
+                    setDeck(currentDeck); setDiscardPile(currentDiscard); return; 
+                }
+                const card = currentDeck[0];
+                setDeck(currentDeck.slice(1));
+                setDiscardPile(currentDiscard);
+                setHoldingCard(card);
+                setPhase('ACTION');
+                setMessage(`Dapat: "${card.content}". Pasang atau Buang.`);
+                setIsDeckModalOpen(false);
+            };
+
+            const selectFromDiscard = (selectedCard) => {
+                const newDiscardPile = discardPile.filter(c => c.id !== selectedCard.id);
+                setDiscardPile(newDiscardPile);
+                setHoldingCard(selectedCard);
+                setPhase('ACTION');
+                setMessage("Mengambil dari Tumpukan Terbuka.");
+                setIsDeckModalOpen(false);
+            };
+
+            const drawFromDiscard = () => {
+                // Not used directly in new modal logic, but kept for fallback
+            };
+
+            const placeCard = (slotIndex) => {
+                if (!holdingCard || phase !== 'ACTION') return;
+                const board = [...currentPlayer.board];
+                let errorMsg = "";
+                let isValid = false;
+
+                if (board[slotIndex] !== null) errorMsg = "Slot terisi!";
+                else if (slotIndex === 0) {
+                    if (holdingCard.type === CARD_TYPES.TITLE) isValid = true;
+                    else errorMsg = "Wajib KARTU JUDUL (Bintang).";
+                } else {
+                    if (!board[0]) errorMsg = "Pasang JUDUL dulu!";
+                    else if (holdingCard.dimension !== board[0].dimension) errorMsg = "Salah Warna!";
+                    else if (holdingCard.type === CARD_TYPES.EXAMPLE) isValid = true;
+                    else errorMsg = "Wajib CONTOH SIKAP.";
+                }
+
+                if (isValid) {
+                    playSFX('correct'); // Putar efek suara benar
+                    board[slotIndex] = holdingCard;
+                    const newPlayers = [...players];
+                    newPlayers[turn].board = board;
+                    setPlayers(newPlayers);
+                    setHoldingCard(null);
+                    if (board.every(c => c !== null)) { setWinner(newPlayers[turn]); setGameState('END'); } else nextTurn();
+                } else {
+                    playSFX('wrong'); // Putar efek suara salah
+                    const prevMsg = message;
+                    setMessage(`❌ ${errorMsg}`);
+                    setTimeout(() => { if (phase === 'ACTION') setMessage(prevMsg.includes("Dapat") ? prevMsg : "Pilih slot yang benar."); }, 1500);
+                }
+            };
+
+            const discard = () => {
+                if (!holdingCard) return;
+                setDiscardPile([holdingCard, ...discardPile]);
+                setHoldingCard(null);
+                nextTurn();
+            };
+
+            const nextTurn = () => {
+                const nextP = (turn + 1) % playerCount;
+                setTurn(nextP);
+                setPhase('DRAW');
+                setMessage(`Giliran ${players[nextP].name}: Sentuh tombol AMBIL KARTU`);
+            };
+
+            const goHome = () => setGameState('INTRO');
+
+            // Layout Logic
+            const gridClass = playerCount === 2 
+                ? "grid-cols-2 gap-4 md:gap-8 px-4 md:px-8" 
+                : "grid-cols-2 grid-rows-2 gap-2 md:gap-4 px-2 md:px-4";
+
+            return (
+                <div className="relative font-sans">
+                    <MusicPlayer />
+                    <FullScreenToggle />
+                    {gameState !== 'INTRO' && <HomeButton onClick={goHome} />}
+                    
+                    {gameState === 'INTRO' && <IntroScreen onNext={() => setGameState('TUTORIAL')} onMaterial={() => setGameState('MATERIAL')} />}
+                    {gameState === 'MATERIAL' && <MaterialScreen onBack={goHome} />}
+                    {gameState === 'TUTORIAL' && <TutorialScreen onNext={() => setGameState('SETUP')} />}
+                    {gameState === 'SETUP' && <SetupScreen onStart={startGame} />}
+                    {gameState === 'PLAY' && (
+                         <div className="h-screen w-screen flex flex-col overflow-hidden relative">
+                            {/* Panel Timer */}
+                            <div className={`fixed top-2 right-14 md:top-4 md:right-20 z-[100] bg-white/95 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-display font-bold shadow-lg text-indigo-900 border-2 border-indigo-200 flex items-center gap-1 md:gap-2 ${timeLeft < 60 ? 'text-red-600 animate-pulse border-red-300' : ''}`}>
+                                <Icons.Clock />
+                                <span className="text-sm md:text-base tracking-wider">{formatTime(timeLeft)}</span>
+                            </div>
+
+                            <div className="absolute top-0 left-0 w-full flex justify-center z-20 pt-2 pointer-events-none">
+                                <div className="pointer-events-auto flex flex-col items-center gap-2 mt-4 md:mt-2">
+                                    <div className="bg-white/90 backdrop-blur text-indigo-900 border-2 border-indigo-200 text-center px-4 md:px-6 py-2 rounded-full text-xs sm:text-sm md:text-base font-bold shadow-lg mb-1 whitespace-nowrap min-w-[200px] md:min-w-[300px]">{message}</div>
+                                    {!holdingCard && phase === 'DRAW' && <button onClick={handleDrawClick} className="bg-yellow-400 hover:bg-yellow-300 text-indigo-900 font-display font-bold py-2 px-6 md:py-3 md:px-8 rounded-2xl shadow-[0_0_15px_rgba(250,204,21,0.6)] border-b-4 border-yellow-600 active:border-b-0 active:translate-y-1 text-base md:text-xl animate-bounce">AMBIL KARTU 🎴</button>}
+                                    {holdingCard && (
+                                        <div className="flex items-center gap-4 bg-slate-800/90 p-2 md:p-3 rounded-2xl backdrop-blur border border-white/20 animate-bounce-in shadow-2xl">
+                                            <div className="scale-75 origin-left md:scale-90"><Card data={holdingCard} size="md" isPlayable={false} /></div>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="text-white text-[10px] md:text-xs opacity-80 font-bold max-w-[100px] md:max-w-[120px] leading-tight">Letakkan di papanmu atau buang</div>
+                                                <button onClick={discard} className="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-3 md:py-2 md:px-4 rounded-xl shadow-lg border-b-4 border-red-700 active:border-b-0 active:translate-y-1 flex items-center justify-center gap-2 text-xs md:text-sm"><Icons.Trash /> BUANG</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <DeckModal isOpen={isDeckModalOpen} onClose={() => setIsDeckModalOpen(false)} onDrawDeck={drawCard} onSelectFromDiscard={selectFromDiscard} deckCount={deck.length} discardPile={discardPile} />
+                            <div className={`w-full h-full grid ${gridClass} content-end pb-2 md:pb-4 pt-16 md:pt-24`}>
+                                {players.map((p, idx) => {
+                                    const isMyTurn = turn === idx;
+                                    let gridSpan = "";
+                                    if (playerCount === 3 && idx === 2) gridSpan = "col-span-2 w-1/2 mx-auto";
+                                    return (
+                                        <div key={p.id} className={`relative rounded-2xl md:rounded-3xl border-[4px] ${p.border} ${p.bg} flex flex-col items-center justify-center p-1 md:p-2 transition-all duration-500 overflow-hidden ${gridSpan} ${isMyTurn ? 'ring-2 md:ring-4 ring-yellow-400 z-10 shadow-2xl opacity-100 backdrop-blur-sm' : 'opacity-80 grayscale-[0.2] backdrop-blur-sm'}`}>
+                                            <div className={`absolute top-1 left-2 md:top-2 md:left-4 font-bold ${p.text} bg-white/90 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-sm shadow-md z-20 border border-slate-200`}>{p.name} {isMyTurn && "🎲"}</div>
+                                            <div className="flex flex-col justify-end gap-1 md:gap-2 w-full h-full pb-1">
+                                                <div className="flex justify-center w-full"><BoardSlot index={0} card={p.board[0]} isActive={isMyTurn} onDrop={placeCard} /></div>
+                                                <div className="flex justify-center gap-0.5 md:gap-1 w-full px-0.5 md:px-1">
+                                                    {[1,2,3,4].map(slotIdx => (<div key={slotIdx} className="flex-1 max-w-[24%]"><BoardSlot index={slotIdx} card={p.board[slotIdx]} isActive={isMyTurn} onDrop={placeCard} /></div>))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                    {gameState === 'END' && (
+                        <div className="fixed inset-0 z-50 bg-slate-900/80 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-5xl w-full text-center animate-bounce-in max-h-screen overflow-y-auto custom-scroll border-8 border-yellow-400 shadow-2xl">
+                                {winner ? (
+                                    <>
+                                        <h2 className="text-2xl md:text-5xl font-display font-bold text-yellow-500 mb-2 drop-shadow-sm">🏆 SELAMAT! 🏆</h2>
+                                        <h3 className="text-xl md:text-3xl font-bold text-slate-800 mb-6">{winner.name} MENANG!</h3>
+                                        <div className="bg-blue-50 p-4 md:p-6 rounded-2xl mb-8 border-2 border-blue-100">
+                                            <h4 className="font-bold text-lg md:text-2xl text-center mb-6 text-indigo-700 flex items-center justify-center gap-2"><Icons.Book /> WAKTU REFLEKSI</h4>
+                                            <p className="text-slate-600 mb-6 text-sm md:text-lg">Berikut adalah definisi dan sikap dari dimensi <strong>{winner.board[0].content}</strong> yang telah kalian kumpulkan:</p>
+                                            <div className="flex flex-col items-center gap-6">
+                                                <div className="flex gap-4 items-center">
+                                                    <div className="flex flex-col items-center"><span className="text-[10px] md:text-xs font-bold text-slate-400 mb-1">JUDUL</span><Card data={winner.board[0]} size="lg" fullText={true} /></div>
+                                                    <div className="text-2xl text-slate-400">➜</div>
+                                                    <div className="flex flex-col items-center animate-bounce-in"><span className="text-[10px] md:text-xs font-bold text-slate-400 mb-1">DEFINISI (TERBUKA)</span><Card data={{ type: 'DEFINISI', dimension: winner.board[0].dimension, content: DIMENSIONS[winner.board[0].dimension].definition, desc: "Kartu Penjelas" }} size="lg" fullText={true} /></div>
+                                                </div>
+                                                <div className="flex flex-col items-center w-full"><span className="text-[10px] md:text-xs font-bold text-slate-400 mb-2">CONTOH SIKAP</span><div className="grid grid-cols-4 gap-2 w-full max-w-2xl">{[1,2,3,4].map(idx => (<div key={idx} className="origin-top hover:scale-105 transition-transform"><Card data={winner.board[idx]} size="auto" fullText={true} /></div>))}</div></div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="text-2xl md:text-5xl font-display font-bold text-slate-500 mb-2 drop-shadow-sm">⏳ WAKTU HABIS! ⏳</h2>
+                                        <h3 className="text-xl md:text-3xl font-bold text-slate-800 mb-6">Permainan Berakhir Seri!</h3>
+                                    </>
+                                )}
+                                <button onClick={() => setGameState('SETUP')} className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-bold py-3 px-8 md:px-12 rounded-full text-lg md:text-xl shadow-xl transition-all border-b-8 border-green-700 active:border-b-0 active:translate-y-2 flex items-center gap-2 mx-auto"><Icons.Play /> MAIN LAGI</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DPLGame />);
+    </script>
+</body>
+</html>
